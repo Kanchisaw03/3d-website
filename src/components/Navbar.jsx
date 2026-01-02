@@ -6,9 +6,9 @@ export default function Navbar() {
     const navRef = useRef(null);
 
     const links = [
-        { name: 'HOME', href: '#' },
-        { name: 'SERVICES', href: '#services' },
-        { name: 'VISION', href: '#vision' }
+        { name: 'QUBITS', href: '#' },
+        { name: 'CAPABILITIES', href: '#services' },
+        { name: 'CONTACT', href: '#contact' }
     ];
 
     const handleMouseEnter = (index, e) => {
