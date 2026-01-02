@@ -33,7 +33,8 @@ export default function Experience() {
     return (
         <Canvas
             camera={{ position: [0, 0, 15], fov: 35 }}
-            gl={{ antialias: true, alpha: true }}
+            dpr={[1, 2]} // Support high-DPI screens
+            gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
             className="!fixed top-0 left-0 w-full h-full z-0"
         >
             <color attach="background" args={['#050505']} />

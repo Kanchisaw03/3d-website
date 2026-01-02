@@ -14,7 +14,13 @@ export default function LiquidSphere() {
 
     // Load texture
     const [glassMap] = useLoader(TextureLoader, ['/assets/textures/liquid_glass.png']);
-    glassMap.wrapS = glassMap.wrapT = THREE.RepeatWrapping;
+    useMemo(() => {
+        glassMap.wrapS = glassMap.wrapT = THREE.RepeatWrapping;
+        // Max anisotropy for sharp rendering at angles
+        glassMap.anisotropy = 16;
+        glassMap.minFilter = THREE.LinearMipmapLinearFilter;
+        glassMap.magFilter = THREE.LinearFilter;
+    }, [glassMap]);
 
     const uniforms = useMemo(
         () => ({
