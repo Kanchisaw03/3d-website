@@ -81,7 +81,7 @@ export default function Experience() {
     return (
         <Canvas
             camera={{ position: [0, 0, 15], fov: 35 }}
-            dpr={[1, 2]}
+            dpr={[1.5, 2]} // Minimum 1.5x resolution to prevent pixelation
             gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
             className="!fixed top-0 left-0 w-full h-full z-0"
         >

@@ -2,6 +2,7 @@ import { forwardRef, useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import AboutSplit from './AboutSplit';
+import ProjectsPortal from './ProjectsPortal';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -118,7 +119,7 @@ export default function Overlay() {
       {/* PHASE 1.5: ABOUT SPLIT */}
       <AboutSplit />
 
-      {/* PHASE 2: PORTAL */}
+      {/* PHASE 2: PORTAL (SERVICES) */}
       <Section className="items-center justify-center pointer-events-none">
         {/* Container with perspective for 3D fan effect */}
         <div ref={containerRef} className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-3 gap-8 px-4" style={{ perspective: '1500px' }}>
@@ -165,7 +166,10 @@ export default function Overlay() {
         </div>
       </Section>
 
-      {/* PHASE 3: CONVERGENCE */}
+      {/* PHASE 3: PROJECTS PORTAL */}
+      <ProjectsPortal />
+
+      {/* PHASE 4: CONVERGENCE */}
       <Section className="items-center text-center pointer-events-none">
         <h2 className="font-header text-4xl md:text-7xl font-bold mb-12" style={{ mixBlendMode: 'difference', color: 'white' }}>
           Clarity is a<br />competitive advantage.
