@@ -1,15 +1,11 @@
-// Vertex Shader
-export const liquidVertexShader = `
+// Vertex Shader for Dark Sea
+export const seaVertexShader = `
   varying vec2 vUv;
-  varying vec3 vNormal;
   varying vec3 vPosition;
-  varying float vInfluence;
-  
-  uniform float uTime;
-  uniform float uDistort;
-  uniform vec3 uPoint;
-  uniform float uInteract;
+  varying vec3 vNormal; // We recalculate normal after displacement
 
+  uniform float uTime;
+  
   // Simplex noise function
   vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
   vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
@@ -67,74 +63,54 @@ export const liquidVertexShader = `
     vUv = uv;
     vNormal = normal;
     
-    // Interaction Influence
-    float dist = distance(position, uPoint);
-    // Radius of influence = 0.8 for tighter, smaller width
-    float influence = smoothstep(0.8, 0.0, dist) * uInteract; 
+    // Slow, heavy rolling waves
+    float noiseFreq = 0.4;
+    float noiseAmp = 1.2;
+    float speed = uTime * 0.2; 
     
-    vInfluence = influence; // Pass to fragment
-
-    // Smoother, smaller distortion at touch point
-    float noiseFreq = 1.5 + influence * 2.0; // slightly more ripples, but not chaotic
-    float noiseAmp = uDistort + influence * 0.6; // much smaller spikes (was 2.5)
-    float speed = uTime * (1.0 + influence * 2.0); // moderate speed increase
-
-    float noise = snoise(position * noiseFreq + vec3(speed));
+    vec3 noisePos = vec3(position.x * noiseFreq + speed, position.y * noiseFreq + speed, position.z);
+    float noise = snoise(noisePos);
+    
+    // Displace along Z (which is Up for a rotated plane, or Normal)
     vec3 newPos = position + normal * noise * noiseAmp;
-
+    
     vPosition = newPos;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(newPos, 1.0);
   }
 `;
 
 // Fragment Shader
-export const liquidFragmentShader = `
+export const seaFragmentShader = `
   varying vec2 vUv;
-  varying vec3 vNormal;
   varying vec3 vPosition;
-  varying float vInfluence;
+  varying vec3 vNormal; // Note: For true lighting we should recalculate normals from derivatives
   
-  uniform sampler2D uTexture;
+  uniform float uOpacity;
   uniform float uTime;
-  uniform float uOpacity; // New uniform
 
   void main() {
+    // Reconstruct flat face normals for sharp look
+    vec3 xTangent = dFdx(vPosition);
+    vec3 yTangent = dFdy(vPosition);
+    vec3 faceNormal = normalize(cross(xTangent, yTangent));
+    
     vec3 viewDir = normalize(cameraPosition - vPosition);
-    vec3 normal = normalize(vNormal);
-    float fresnel = pow(1.0 + dot(viewDir, normal), 3.0);
+    float fresnel = pow(1.0 + dot(viewDir, faceNormal), 3.0); // 1.0 + because normal might face slightly away
 
-    vec4 texColor = texture2D(uTexture, vUv + sin(uTime * 0.1) * 0.1);
+    // Dark Chrome Colors
+    vec3 deepBase = vec3(0.0, 0.01, 0.02); // Pitch black/blue
+    vec3 chromeHighlight = vec3(0.1, 0.15, 0.25); // Steel blue-grey refelction
+    
+    // Dynamic Glint
+    float glint = pow(max(0.0, dot(reflect(-viewDir, faceNormal), vec3(0.0, 1.0, 0.0))), 16.0);
+    
+    vec3 color = mix(deepBase, chromeHighlight, fresnel * 0.5);
+    color += vec3(0.5, 0.6, 0.7) * glint * 0.5; // Specular hit
 
-    // Blue Chrome Liquid (DARK MIRROR)
-    // Base: Almost pitch black with hint of deep navy
-    vec3 baseColor = vec3(0.0, 0.02, 0.05); 
-    
-    // Glossy Reflection (High Contrast)
-    // Power function sharpens the reflection, making it look more polished/wet
-    vec3 sharpReflection = pow(texColor.rgb, vec3(2.0)) * 2.0; 
-    
-    // Mix Base + Reflection with Fresnel
-    vec3 finalColor = mix(baseColor, sharpReflection, fresnel);
-    
-    // Custom Blue-Chrome Rim
-    float rim = 1.0 - dot(viewDir, normal);
-    float rimPower = pow(rim, 3.0);
-    
-    // Darker chrome colors
-    vec3 chromeBlue = vec3(0.2, 0.4, 0.8); // Darker chrome blue
-    vec3 deepBlue = vec3(0.0, 0.1, 0.5);   // Deep navy
-    
-    // Dynamic shimmer
-    float shimmer = sin(uTime * 0.5 + rim * 10.0) * 0.5 + 0.5;
-    vec3 rimColor = mix(deepBlue, chromeBlue, shimmer);
-    
-    finalColor += rimColor * rimPower * 0.6; // Reduced intensity (was 1.2)
+    // Grid lines for "Tech" feel (optional, maybe keep it liquid only)
+    // float grid = step(0.98, fract(vUv.x * 20.0)) + step(0.98, fract(vUv.y * 20.0));
+    // color += vec3(0.0, 0.2, 0.4) * grid * 0.2;
 
-    // INTERACTIVE HEAT BLEED
-    // If influenced by cursor, add Deep Cyan heat (not white)
-    vec3 heatColor = vec3(0.0, 0.8, 1.0); // Electric Cyan
-    finalColor = mix(finalColor, heatColor, vInfluence * 0.6); // Blend based on influence
-
-    gl_FragColor = vec4(finalColor, uOpacity); // Use dynamic opacity
+    gl_FragColor = vec4(color, uOpacity);
   }
 `;

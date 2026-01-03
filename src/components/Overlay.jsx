@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import AboutSplit from './AboutSplit';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -23,8 +24,11 @@ export default function Overlay() {
 
     const cards = [card1Ref.current, card2Ref.current, card3Ref.current];
 
-    // Kill old triggers if any (React strict mode safety)
-    ScrollTrigger.getAll().forEach(t => t.kill());
+    // Force a refresh to recognize the new pinned section layout
+    // We delay slightly to ensure the DOM has settled
+    setTimeout(() => {
+      ScrollTrigger.refresh();
+    }, 500);
 
     const mm = gsap.matchMedia();
 
@@ -33,27 +37,27 @@ export default function Overlay() {
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: containerRef.current,
-          start: "top 75%", // Start when container top is 75% down viewport
-          end: "center center", // End when container center is at viewport center
+          start: "top 75%",
+          end: "center center",
           scrub: 1
         }
       });
 
-      // Set initial state via GSAP to ensure no FOUC
+      // Set initial state
       gsap.set(cards, { opacity: 0 });
 
-      // Card 1 (Left) - Starts Center, moves Left
+      // Card 1
       tl.fromTo(card1Ref.current,
         { xPercent: 105, y: 50, z: -100, rotateY: -5, opacity: 0 },
         { xPercent: 0, y: 0, z: 0, rotateY: 0, opacity: 1, duration: 1 }
       )
-        // Card 2 (Center) - Starts slightly back
+        // Card 2
         .fromTo(card2Ref.current,
           { z: -150, scale: 0.9, opacity: 0 },
           { z: 0, scale: 1, opacity: 1, duration: 1 },
-          "<" // Sync start
+          "<"
         )
-        // Card 3 (Right) - Starts Center, moves Right
+        // Card 3
         .fromTo(card3Ref.current,
           { xPercent: -105, y: 50, z: -100, rotateY: 5, opacity: 0 },
           { xPercent: 0, y: 0, z: 0, rotateY: 0, opacity: 1, duration: 1 },
@@ -98,11 +102,11 @@ export default function Overlay() {
   }, []);
 
   return (
-    // Height 300vh to define scrollable area for 3 sections
-    <div className="relative w-full h-[300vh] text-cold-white pointer-events-none">
+    // Height auto
+    <div className="relative w-full text-cold-white">
 
       {/* PHASE 1: ENTRY */}
-      <Section className="items-start">
+      <Section className="items-start pointer-events-none">
         <h1 className="font-header text-6xl md:text-9xl font-bold tracking-tighter uppercase leading-[0.8]" style={{ mixBlendMode: 'difference', color: 'white' }}>
           QUBITS BUILDS<br />WHAT OTHERS CAN’T.
         </h1>
@@ -111,8 +115,11 @@ export default function Overlay() {
         </div>
       </Section>
 
+      {/* PHASE 1.5: ABOUT SPLIT */}
+      <AboutSplit />
+
       {/* PHASE 2: PORTAL */}
-      <Section className="items-center justify-center">
+      <Section className="items-center justify-center pointer-events-none">
         {/* Container with perspective for 3D fan effect */}
         <div ref={containerRef} className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-3 gap-8 px-4" style={{ perspective: '1500px' }}>
 
@@ -159,7 +166,7 @@ export default function Overlay() {
       </Section>
 
       {/* PHASE 3: CONVERGENCE */}
-      <Section className="items-center text-center">
+      <Section className="items-center text-center pointer-events-none">
         <h2 className="font-header text-4xl md:text-7xl font-bold mb-12" style={{ mixBlendMode: 'difference', color: 'white' }}>
           Clarity is a<br />competitive advantage.
         </h2>

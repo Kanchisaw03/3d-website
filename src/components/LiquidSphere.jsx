@@ -1,12 +1,15 @@
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, forwardRef, useImperativeHandle } from 'react';
 import { useFrame, useLoader } from '@react-three/fiber';
 import * as THREE from 'three';
 import { TextureLoader } from 'three/src/loaders/TextureLoader';
 import { liquidVertexShader, liquidFragmentShader } from '../shaders/liquidMetal';
 import { easing } from 'maath';
 
-export default function LiquidSphere() {
-    const meshRef = useRef();
+const LiquidSphere = forwardRef((props, ref) => {
+    const internalRef = useRef();
+
+    // Expose internal mesh to parent ref
+    useImperativeHandle(ref, () => internalRef.current);
 
     // Interactive targets
     const targetPoint = useRef(new THREE.Vector3());
@@ -29,30 +32,30 @@ export default function LiquidSphere() {
             uTexture: { value: glassMap },
             uPoint: { value: new THREE.Vector3() },
             uInteract: { value: 0.0 },
+            uOpacity: { value: 1.0 }, // Initialize full opacity
         }),
         [glassMap]
     );
 
     useFrame((state, delta) => {
-        if (meshRef.current) {
+        if (internalRef.current) {
             // Update Time
-            meshRef.current.material.uniforms.uTime.value += delta * 0.5;
+            internalRef.current.material.uniforms.uTime.value += delta * 0.5;
 
             // Organic Rotation
-            meshRef.current.rotation.y += delta * 0.05;
-            meshRef.current.rotation.z += delta * 0.02;
+            internalRef.current.rotation.y += delta * 0.05;
+            internalRef.current.rotation.z += delta * 0.02;
 
             // Damp Interaction
-            easing.damp(meshRef.current.material.uniforms.uInteract, 'value', targetInteract.current, 0.25, delta);
-            easing.damp3(meshRef.current.material.uniforms.uPoint.value, targetPoint.current, 0.25, delta);
+            easing.damp(internalRef.current.material.uniforms.uInteract, 'value', targetInteract.current, 0.25, delta);
+            easing.damp3(internalRef.current.material.uniforms.uPoint.value, targetPoint.current, 0.25, delta);
         }
     });
 
     const handlePointerMove = (e) => {
-        // e.point is in world space. Convert to local space for interaction.
-        if (meshRef.current) {
+        if (internalRef.current) {
             const localPoint = e.point.clone();
-            meshRef.current.worldToLocal(localPoint);
+            internalRef.current.worldToLocal(localPoint);
             targetPoint.current.copy(localPoint);
             targetInteract.current = 1.0;
         }
@@ -64,7 +67,7 @@ export default function LiquidSphere() {
 
     return (
         <mesh
-            ref={meshRef}
+            ref={internalRef}
             position={[0, 0, 0]}
             onPointerMove={handlePointerMove}
             onPointerOut={handlePointerOut}
@@ -75,7 +78,11 @@ export default function LiquidSphere() {
                 fragmentShader={liquidFragmentShader}
                 uniforms={uniforms}
                 wireframe={false}
+                transparent={true} // Enable transparency
+                depthWrite={false} // Prevent z-fighting during fade
             />
         </mesh>
     );
-}
+});
+
+export default LiquidSphere;
